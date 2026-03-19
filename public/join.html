@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Join - Mentes Gemelas</title>
+</head>
+<body>
+
+  <h2>Ingresa tu nombre</h2>
+  <input id="name" />
+  <button onclick="join()">Unirse</button>
+
+  <div id="game" style="display:none;">
+    <h3 id="question"></h3>
+    <input id="answer" />
+    <button onclick="send()">Enviar</button>
+    <button onclick="next()">Siguiente</button>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io()
+
+    function join() {
+      const name = document.getElementById("name").value
+      socket.emit("join_game", name)
+      document.getElementById("game").style.display = "block"
+    }
+
+    function send() {
+      const answer = document.getElementById("answer").value
+      socket.emit("submit_answer", answer)
+      document.getElementById("answer").value = ""
+    }
+
+    function next() {
+      socket.emit("next_question")
+    }
+
+    socket.on("new_question", data => {
+      document.getElementById("question").innerText = data.question
+    })
+  </script>
+</body>
+</html>
