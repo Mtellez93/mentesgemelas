@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mentes Gemelas - Host</title>
+</head>
+<body>
+  <h1>Mentes Gemelas</h1>
+
+  <h2 id="timer">60</h2>
+  <h3 id="question">Esperando...</h3>
+
+  <div id="answers"></div>
+  <div id="score"></div>
+
+  <button onclick="startGame()">Start Game</button>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io()
+
+    function startGame() {
+      socket.emit("start_game")
+    }
+
+    socket.on("timer", t => {
+      document.getElementById("timer").innerText = t
+    })
+
+    socket.on("new_question", data => {
+      document.getElementById("question").innerText = data.question
+    })
+
+    socket.on("answer_result", data => {
+      document.getElementById("answers").innerText =
+        data.answers.join(" vs ")
+
+      document.getElementById("score").innerText =
+        "Puntos: " + data.total
+    })
+  </script>
+</body>
+</html>
