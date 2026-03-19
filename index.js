@@ -14,8 +14,19 @@ const io = new Server(server, {
 
 const PORT = process.env.PORT || 3007
 
+// Servir archivos estáticos
 app.use(express.static(path.join(__dirname, "public")))
 
+// ✅ Ruta base (soluciona "Cannot GET /")
+app.get("/", (req, res) => {
+  res.send(`
+    <h1>Mentes Gemelas 🎮</h1>
+    <p><a href="/host.html">Ir a Host (TV)</a></p>
+    <p><a href="/join.html">Unirse al juego</a></p>
+  `)
+})
+
+// Estado del juego
 let players = []
 let teams = []
 let currentTeamIndex = 0
@@ -25,7 +36,7 @@ let interval = null
 let currentQuestion = null
 let questionCount = 0
 
-// NORMALIZE
+// Normalizar texto (para comparar respuestas)
 function normalize(text) {
   return text
     .toLowerCase()
@@ -34,16 +45,18 @@ function normalize(text) {
     .trim()
 }
 
-// LOAD QUESTIONS INIT
+// Cargar preguntas al iniciar
 loadQuestions()
 
-// AUTO REFRESH CADA 60 MINUTOS
+// 🔁 Auto-refresh cada 60 minutos
 setInterval(() => {
   loadQuestions()
 }, 60 * 60 * 1000)
 
-// SOCKETS
+// SOCKET.IO
 io.on("connection", (socket) => {
+
+  console.log("Usuario conectado:", socket.id)
 
   socket.on("join_game", (name) => {
     players.push({
@@ -55,6 +68,7 @@ io.on("connection", (socket) => {
   })
 
   socket.on("start_game", () => {
+    // Mezclar jugadores
     players.sort(() => Math.random() - 0.5)
 
     teams = []
@@ -70,6 +84,7 @@ io.on("connection", (socket) => {
     }
 
     currentTeamIndex = 0
+
     io.emit("game_started", teams)
 
     startTurn()
@@ -104,6 +119,7 @@ io.on("connection", (socket) => {
         team.streak = 0
       }
 
+      // Pregunta 6 = doble puntos
       if (questionCount === 6) {
         points *= 2
       }
@@ -124,9 +140,14 @@ io.on("connection", (socket) => {
     sendQuestion()
   })
 
+  socket.on("disconnect", () => {
+    players = players.filter(p => p.id !== socket.id)
+    io.emit("lobby_update", players)
+  })
+
 })
 
-// TURN LOGIC
+// Lógica de turnos
 function startTurn() {
   timer = 60
   questionCount = 0
@@ -149,6 +170,7 @@ function startTurn() {
   }, 1000)
 }
 
+// Enviar nueva pregunta
 function sendQuestion() {
   questionCount++
   currentQuestion = getRandomQuestion()
@@ -159,6 +181,7 @@ function sendQuestion() {
   })
 }
 
+// Iniciar servidor
 server.listen(PORT, () => {
   console.log("Running on port " + PORT)
 })
