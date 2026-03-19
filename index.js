@@ -14,19 +14,12 @@ const io = new Server(server, {
 
 const PORT = process.env.PORT || 3007
 
-// Servir archivos estáticos
 app.use(express.static(path.join(__dirname, "public")))
 
-// ✅ Ruta base (soluciona "Cannot GET /")
 app.get("/", (req, res) => {
-  res.send(`
-    <h1>Mentes Gemelas 🎮</h1>
-    <p><a href="/host.html">Ir a Host (TV)</a></p>
-    <p><a href="/join.html">Unirse al juego</a></p>
-  `)
+  res.sendFile(path.join(__dirname, "index.html"))
 })
 
-// Estado del juego
 let players = []
 let teams = []
 let currentTeamIndex = 0
@@ -35,8 +28,9 @@ let timer = 60
 let interval = null
 let currentQuestion = null
 let questionCount = 0
+let gameStarted = false
+let lobbyCode = createLobbyCode()
 
-// Normalizar texto (para comparar respuestas)
 function normalize(text) {
   return text
     .toLowerCase()
@@ -45,36 +39,115 @@ function normalize(text) {
     .trim()
 }
 
-// Cargar preguntas al iniciar
+function createLobbyCode() {
+  return Math.random().toString(36).slice(2, 8).toUpperCase()
+}
+
+function getLobbyPayload() {
+  return {
+    code: lobbyCode,
+    players,
+    canStart: players.length >= 2 && players.length % 2 === 0,
+    gameStarted
+  }
+}
+
+function resetRoundState() {
+  currentTeamIndex = 0
+  currentAnswers = {}
+  timer = 60
+  questionCount = 0
+  currentQuestion = null
+
+  if (interval) {
+    clearInterval(interval)
+    interval = null
+  }
+}
+
+function resetLobby() {
+  players = []
+  teams = []
+  gameStarted = false
+  lobbyCode = createLobbyCode()
+  resetRoundState()
+  io.emit("lobby_update", getLobbyPayload())
+}
+
+function emitLobbyUpdate(target = io) {
+  target.emit("lobby_update", getLobbyPayload())
+}
+
+function emitGameState() {
+  const activeTeam = teams[currentTeamIndex] || null
+
+  io.emit("turn_update", {
+    activeTeam,
+    teamNumber: activeTeam ? currentTeamIndex + 1 : null,
+    totalTeams: teams.length,
+    questionCount
+  })
+}
+
 loadQuestions()
 
-// 🔁 Auto-refresh cada 60 minutos
 setInterval(() => {
   loadQuestions()
 }, 60 * 60 * 1000)
 
-// SOCKET.IO
 io.on("connection", (socket) => {
-
   console.log("Usuario conectado:", socket.id)
 
-  socket.on("join_game", (name) => {
-    players.push({
-      id: socket.id,
-      name
-    })
+  emitLobbyUpdate(socket)
 
-    io.emit("lobby_update", players)
+  socket.on("join_game", ({ name, lobbyCode: submittedCode }) => {
+    const cleanName = String(name || "").trim()
+    const cleanCode = String(submittedCode || "").trim().toUpperCase()
+
+    if (gameStarted) {
+      socket.emit("join_error", "La partida ya comenzó. Espera a la siguiente ronda.")
+      return
+    }
+
+    if (!cleanName) {
+      socket.emit("join_error", "Escribe tu nombre para entrar al lobby.")
+      return
+    }
+
+    if (cleanCode !== lobbyCode) {
+      socket.emit("join_error", "El código de lobby no coincide.")
+      return
+    }
+
+    const alreadyJoined = players.some((player) => player.id === socket.id)
+
+    if (!alreadyJoined) {
+      players.push({
+        id: socket.id,
+        name: cleanName
+      })
+    } else {
+      players = players.map((player) => (
+        player.id === socket.id
+          ? { ...player, name: cleanName }
+          : player
+      ))
+    }
+
+    socket.emit("join_success", { name: cleanName, lobbyCode })
+    emitLobbyUpdate()
   })
 
   socket.on("start_game", () => {
-    // Mezclar jugadores
+    if (gameStarted || players.length < 2 || players.length % 2 !== 0) {
+      socket.emit("game_error", "Se necesitan al menos 2 jugadores y un número par para comenzar.")
+      return
+    }
+
     players.sort(() => Math.random() - 0.5)
 
     teams = []
     for (let i = 0; i < players.length; i += 2) {
-      if (!players[i + 1]) continue
-
       teams.push({
         id: "team_" + i,
         players: [players[i], players[i + 1]],
@@ -83,25 +156,32 @@ io.on("connection", (socket) => {
       })
     }
 
-    currentTeamIndex = 0
+    gameStarted = true
+    resetRoundState()
 
     io.emit("game_started", teams)
+    emitLobbyUpdate()
 
     startTurn()
   })
 
   socket.on("submit_answer", (answer) => {
+    if (!gameStarted) {
+      return
+    }
+
     currentAnswers[socket.id] = answer
 
     const team = teams[currentTeamIndex]
     if (!team) return
 
-    const ids = team.players.map(p => p.id)
+    const ids = team.players.map((player) => player.id)
 
-    if (ids.every(id => currentAnswers[id])) {
+    if (ids.every((id) => currentAnswers[id])) {
       clearInterval(interval)
+      interval = null
 
-      let [a, b] = ids.map(id => currentAnswers[id])
+      const [a, b] = ids.map((id) => currentAnswers[id])
 
       let points = 2
       let match = false
@@ -119,7 +199,6 @@ io.on("connection", (socket) => {
         team.streak = 0
       }
 
-      // Pregunta 6 = doble puntos
       if (questionCount === 6) {
         points *= 2
       }
@@ -130,24 +209,36 @@ io.on("connection", (socket) => {
         answers: [a, b],
         match,
         points,
-        total: team.score
+        total: team.score,
+        team
       })
     }
   })
 
   socket.on("next_question", () => {
+    if (!gameStarted) {
+      return
+    }
+
     currentAnswers = {}
     sendQuestion()
   })
 
-  socket.on("disconnect", () => {
-    players = players.filter(p => p.id !== socket.id)
-    io.emit("lobby_update", players)
+  socket.on("reset_lobby", () => {
+    resetLobby()
   })
 
+  socket.on("disconnect", () => {
+    players = players.filter((player) => player.id !== socket.id)
+
+    if (!players.length && !gameStarted) {
+      lobbyCode = createLobbyCode()
+    }
+
+    emitLobbyUpdate()
+  })
 })
 
-// Lógica de turnos
 function startTurn() {
   timer = 60
   questionCount = 0
@@ -159,18 +250,20 @@ function startTurn() {
 
     if (timer <= 0) {
       clearInterval(interval)
+      interval = null
       currentTeamIndex++
 
       if (currentTeamIndex < teams.length) {
         startTurn()
       } else {
         io.emit("game_over", teams)
+        gameStarted = false
+        emitLobbyUpdate()
       }
     }
   }, 1000)
 }
 
-// Enviar nueva pregunta
 function sendQuestion() {
   questionCount++
   currentQuestion = getRandomQuestion()
@@ -179,9 +272,10 @@ function sendQuestion() {
     question: currentQuestion,
     number: questionCount
   })
+
+  emitGameState()
 }
 
-// Iniciar servidor
 server.listen(PORT, () => {
   console.log("Running on port " + PORT)
 })

@@ -1,41 +1,440 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mentes Gemelas - Host</title>
+  <style>
+    :root {
+      --bg: #020617;
+      --panel: rgba(15, 23, 42, 0.86);
+      --panel-soft: rgba(30, 41, 59, 0.88);
+      --border: rgba(148, 163, 184, 0.16);
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --primary: #8b5cf6;
+      --secondary: #22d3ee;
+      --good: #34d399;
+      --bad: #fb7185;
+      --warning: #f59e0b;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(139, 92, 246, 0.35), transparent 28%),
+        radial-gradient(circle at top right, rgba(34, 211, 238, 0.18), transparent 22%),
+        linear-gradient(160deg, #020617 0%, #0f172a 40%, #111827 100%);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 24px;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      padding: 24px;
+      box-shadow: 0 24px 60px rgba(2, 6, 23, 0.4);
+      backdrop-filter: blur(16px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .brand h1, .stage h2, .stage h3, .panel h2, .panel h3 {
+      margin: 0;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      background: rgba(34, 211, 238, 0.12);
+      color: #a5f3fc;
+      padding: 8px 12px;
+      font-size: 0.9rem;
+    }
+
+    .code-box {
+      margin-top: 18px;
+      padding: 16px;
+      border-radius: 22px;
+      background: var(--panel-soft);
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .code-value {
+      font-size: clamp(2rem, 5vw, 3rem);
+      letter-spacing: 0.28rem;
+      font-weight: 800;
+      margin: 6px 0 0;
+      color: white;
+    }
+
+    .qr-wrapper {
+      margin-top: 18px;
+      padding: 18px;
+      border-radius: 24px;
+      background: white;
+      display: grid;
+      place-items: center;
+      min-height: 250px;
+    }
+
+    .qr-wrapper img {
+      width: min(100%, 230px);
+      height: auto;
+      border-radius: 12px;
+    }
+
+    .helper {
+      color: var(--muted);
+      line-height: 1.6;
+      margin-top: 14px;
+    }
+
+    .status {
+      margin-top: 18px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.18);
+      color: #fde68a;
+      line-height: 1.5;
+    }
+
+    .players {
+      margin-top: 20px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .player {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(15, 23, 42, 0.86);
+      border: 1px solid var(--border);
+    }
+
+    .player small { color: var(--muted); }
+
+    .stage {
+      display: grid;
+      gap: 22px;
+      grid-template-rows: auto auto 1fr auto;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .stat {
+      padding: 20px;
+      border-radius: 24px;
+      background: var(--panel-soft);
+      border: 1px solid var(--border);
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+    }
+
+    .stat strong {
+      font-size: clamp(1.8rem, 4vw, 3rem);
+    }
+
+    .question-card, .results-card {
+      padding: 28px;
+      border-radius: 28px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+    }
+
+    #question {
+      font-size: clamp(2rem, 3.4vw, 3.4rem);
+      margin-top: 14px;
+      line-height: 1.2;
+    }
+
+    .subtle {
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: none;
+      border-radius: 16px;
+      padding: 14px 18px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.16s ease, opacity 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    button:hover:not(:disabled) { transform: translateY(-2px); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .primary {
+      background: linear-gradient(135deg, var(--primary), #6366f1);
+      color: white;
+      box-shadow: 0 16px 30px rgba(99, 102, 241, 0.24);
+    }
+
+    .secondary {
+      background: rgba(34, 211, 238, 0.12);
+      border: 1px solid rgba(34, 211, 238, 0.24);
+      color: #a5f3fc;
+    }
+
+    .results-card {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .result-box {
+      padding: 18px;
+      border-radius: 22px;
+      background: var(--panel-soft);
+      min-height: 138px;
+    }
+
+    .match {
+      color: var(--good);
+      font-weight: 700;
+    }
+
+    .mismatch {
+      color: var(--bad);
+      font-weight: 700;
+    }
+
+    @media (max-width: 1080px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .hero, .results-card {
+        grid-template-columns: 1fr;
+      }
+
+      .panel, .question-card, .results-card {
+        padding: 20px;
+      }
+    }
+  </style>
 </head>
 <body>
-  <h1>Mentes Gemelas</h1>
+  <div class="layout">
+    <aside class="panel">
+      <div class="brand">
+        <div>
+          <div class="pill">🧠 Host Lobby</div>
+          <h1>Mentes Gemelas</h1>
+        </div>
+      </div>
 
-  <h2 id="timer">60</h2>
-  <h3 id="question">Esperando...</h3>
+      <div class="code-box">
+        <small class="subtle">Código del lobby</small>
+        <div id="lobbyCode" class="code-value">------</div>
+      </div>
 
-  <div id="answers"></div>
-  <div id="score"></div>
+      <div class="qr-wrapper">
+        <img id="qrImage" alt="QR del lobby" />
+      </div>
 
-  <button onclick="startGame()">Start Game</button>
+      <p class="helper">
+        Los jugadores pueden escanear el QR o entrar manualmente en <strong>/join.html</strong> y escribir su nombre junto con el código del lobby.
+      </p>
+
+      <div id="lobbyStatus" class="status">Esperando jugadores...</div>
+
+      <section>
+        <h3>Jugadores conectados</h3>
+        <div id="players" class="players"></div>
+      </section>
+    </aside>
+
+    <main class="stage">
+      <section class="hero">
+        <div class="stat">
+          <span>Timer</span>
+          <strong id="timer">60</strong>
+        </div>
+        <div class="stat">
+          <span>Equipo activo</span>
+          <strong id="activeTeam">—</strong>
+        </div>
+        <div class="stat">
+          <span>Pregunta</span>
+          <strong id="questionNumber">0</strong>
+        </div>
+      </section>
+
+      <section class="question-card">
+        <div class="subtle">Pregunta actual</div>
+        <h2 id="question">Comparte el QR para empezar el lobby.</h2>
+      </section>
+
+      <section class="results-card">
+        <div class="result-box">
+          <div class="subtle">Respuestas</div>
+          <h3 id="answers">Todavía no hay respuestas enviadas.</h3>
+        </div>
+        <div class="result-box">
+          <div class="subtle">Resultado</div>
+          <h3 id="score">Puntos: 0</h3>
+          <p id="matchStatus" class="subtle">Esperando coincidencias.</p>
+        </div>
+      </section>
+
+      <div class="button-row">
+        <button id="startButton" class="primary" onclick="startGame()" disabled>Start Game</button>
+        <button class="secondary" onclick="resetLobby()">Nuevo lobby</button>
+      </div>
+    </main>
+  </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io()
+    const qrImage = document.getElementById("qrImage")
+    const lobbyCodeEl = document.getElementById("lobbyCode")
+    const playersEl = document.getElementById("players")
+    const lobbyStatusEl = document.getElementById("lobbyStatus")
+    const startButton = document.getElementById("startButton")
+    const timerEl = document.getElementById("timer")
+    const questionEl = document.getElementById("question")
+    const answersEl = document.getElementById("answers")
+    const scoreEl = document.getElementById("score")
+    const matchStatusEl = document.getElementById("matchStatus")
+    const activeTeamEl = document.getElementById("activeTeam")
+    const questionNumberEl = document.getElementById("questionNumber")
+
+    function createJoinUrl(code) {
+      const joinUrl = new URL(window.location.origin + "/join.html")
+      joinUrl.searchParams.set("code", code)
+      return joinUrl.toString()
+    }
+
+    function renderLobby(payload) {
+      const { code, players, canStart, gameStarted } = payload
+      lobbyCodeEl.textContent = code
+      qrImage.src = "https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=" + encodeURIComponent(createJoinUrl(code))
+      qrImage.alt = "QR para unirse al lobby " + code
+
+      playersEl.innerHTML = players.length
+        ? players.map((player, index) => `
+            <div class="player">
+              <div>
+                <strong>${index + 1}. ${player.name}</strong>
+                <small>Listo para jugar</small>
+              </div>
+              <span>✅</span>
+            </div>
+          `).join("")
+        : '<div class="player"><div><strong>Nadie se ha unido todavía</strong><small>Comparte el QR o el código manual.</small></div><span>🕒</span></div>'
+
+      if (gameStarted) {
+        lobbyStatusEl.textContent = "La partida ya empezó. El lobby quedará bloqueado hasta la siguiente ronda."
+      } else if (!players.length) {
+        lobbyStatusEl.textContent = "Esperando jugadores. Comparte el QR o pide que entren con el código."
+      } else if (!canStart) {
+        lobbyStatusEl.textContent = "Se necesita un número par de jugadores y al menos 2 personas para habilitar Start Game."
+      } else {
+        lobbyStatusEl.textContent = "Todos listos: ya puedes pulsar Start Game."
+      }
+
+      startButton.disabled = !canStart || gameStarted
+    }
 
     function startGame() {
       socket.emit("start_game")
     }
 
-    socket.on("timer", t => {
-      document.getElementById("timer").innerText = t
+    function resetLobby() {
+      socket.emit("reset_lobby")
+    }
+
+    socket.on("lobby_update", renderLobby)
+
+    socket.on("timer", (t) => {
+      timerEl.innerText = t
     })
 
-    socket.on("new_question", data => {
-      document.getElementById("question").innerText = data.question
+    socket.on("new_question", (data) => {
+      questionEl.innerText = data.question
+      questionNumberEl.innerText = data.number
     })
 
-    socket.on("answer_result", data => {
-      document.getElementById("answers").innerText =
-        data.answers.join(" vs ")
+    socket.on("turn_update", (data) => {
+      if (!data.activeTeam) {
+        activeTeamEl.innerText = "—"
+        return
+      }
 
-      document.getElementById("score").innerText =
-        "Puntos: " + data.total
+      activeTeamEl.innerText = data.activeTeam.players.map((player) => player.name).join(" + ")
+      questionNumberEl.innerText = data.questionCount
+    })
+
+    socket.on("answer_result", (data) => {
+      answersEl.innerText = data.answers.join(" vs ")
+      scoreEl.innerText = `${data.team.players.map((player) => player.name).join(" + ")}: ${data.total} puntos`
+      matchStatusEl.className = data.match ? "match" : "mismatch"
+      matchStatusEl.innerText = data.match
+        ? `¡Coincidieron! +${data.points} puntos`
+        : `No coincidieron. ${data.points} puntos de ronda`
+    })
+
+    socket.on("game_over", (teams) => {
+      const winner = [...teams].sort((a, b) => b.score - a.score)[0]
+      questionEl.innerText = "¡Partida terminada!"
+      answersEl.innerText = teams.map((team) => `${team.players.map((player) => player.name).join(" + ")}: ${team.score}`).join(" • ")
+      scoreEl.innerText = winner
+        ? `Ganador: ${winner.players.map((player) => player.name).join(" + ")} con ${winner.score} puntos`
+        : "Sin resultados"
+      matchStatusEl.className = "match"
+      matchStatusEl.innerText = "Puedes crear un nuevo lobby para la próxima partida."
+      activeTeamEl.innerText = "Final"
+    })
+
+    socket.on("game_error", (message) => {
+      lobbyStatusEl.textContent = message
     })
   </script>
 </body>
