@@ -1,0 +1,30 @@
+name: Deploy Mentes Gemelas
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /var/www/mentesgemelas
+
+            echo "📥 Pull latest changes..."
+            git pull origin main
+
+            echo "📦 Installing dependencies..."
+            npm install
+
+            echo "♻️ Restarting app..."
+            pm2 restart mentes-gemelas || pm2 start index.js --name mentes-gemelas
+
+            pm2 save
