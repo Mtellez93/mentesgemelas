@@ -1,24 +1,188 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mentes Gemelas</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧠</text></svg>">
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: rgba(15, 23, 42, 0.82);
+      --card-border: rgba(148, 163, 184, 0.16);
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --primary: #8b5cf6;
+      --secondary: #22d3ee;
+      --accent: #f97316;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 32px 20px;
+      font-family: Inter, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top, rgba(139, 92, 246, 0.35), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(34, 211, 238, 0.25), transparent 30%),
+        linear-gradient(135deg, #020617 0%, #111827 45%, #1e1b4b 100%);
+    }
+
+    .shell {
+      width: min(980px, 100%);
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 28px;
+      padding: 40px;
+      box-shadow: 0 28px 80px rgba(2, 6, 23, 0.45);
+      backdrop-filter: blur(16px);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(139, 92, 246, 0.18);
+      color: #ddd6fe;
+      font-size: 14px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      font-size: clamp(2.8rem, 5vw, 4.8rem);
+      line-height: 1;
+      margin: 18px 0 14px;
+    }
+
+    p.hero-copy {
+      max-width: 660px;
+      color: var(--muted);
+      font-size: 1.1rem;
+      line-height: 1.7;
+      margin-bottom: 30px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      margin-top: 30px;
+    }
+
+    .card {
+      padding: 24px;
+      border-radius: 24px;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      background: rgba(15, 23, 42, 0.75);
+    }
+
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 1.4rem;
+    }
+
+    .card p {
+      color: var(--muted);
+      line-height: 1.6;
+      min-height: 76px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      text-decoration: none;
+      border: none;
+      border-radius: 16px;
+      padding: 14px 20px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+    }
+
+    .button:hover {
+      transform: translateY(-2px);
+    }
+
+    .button-primary {
+      background: linear-gradient(135deg, var(--primary), #6366f1);
+      color: white;
+      box-shadow: 0 18px 30px rgba(99, 102, 241, 0.28);
+    }
+
+    .button-secondary {
+      background: rgba(34, 211, 238, 0.14);
+      border: 1px solid rgba(34, 211, 238, 0.24);
+      color: #cffafe;
+    }
+
+    .tips {
+      margin-top: 34px;
+      display: grid;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 0.98rem;
+    }
+
+    .tip strong { color: white; }
+
+    @media (max-width: 640px) {
+      .shell { padding: 24px; }
+      .card p { min-height: auto; }
+      .actions { flex-direction: column; }
+      .button { width: 100%; }
+    }
+  </style>
 </head>
-<body style="font-family: Arial; text-align: center; margin-top: 50px;">
+<body>
+  <main class="shell">
+    <div class="eyebrow">🧠 Party game sincronizado</div>
+    <h1>Mentes Gemelas</h1>
+    <p class="hero-copy">
+      Prepara la pantalla principal, comparte el lobby con un QR y deja que cada jugador entre desde su celular con su nombre y código.
+      Cuando todos estén conectados, el host puede iniciar la partida.
+    </p>
 
-  <h1>🎮 Mentes Gemelas</h1>
+    <section class="grid">
+      <article class="card">
+        <h2>Start Game</h2>
+        <p>
+          Abre la vista del host para mostrar el código del lobby, esperar a todos los jugadores y pulsar <strong>Start Game</strong> cuando estén listos.
+        </p>
+        <a class="button button-primary" href="/host.html">🎮 Abrir host</a>
+      </article>
 
-  <p>
-    <a href="/host.html">
-      <button style="padding: 10px 20px; font-size: 18px;">Modo TV!</button>
-    </a>
-  </p>
+      <article class="card">
+        <h2>Join Lobby</h2>
+        <p>
+          Los jugadores escanean el QR o abren la pantalla de unión, escriben su nombre y el código del lobby, y entran directo a la partida.
+        </p>
+        <a class="button button-secondary" href="/join.html">📱 Unirse al juego</a>
+      </article>
+    </section>
 
-  <p>
-    <a href="/join.html">
-      <button style="padding: 10px 20px; font-size: 18px;">Unirse al juego</button>
-    </a>
-  </p>
-
+    <section class="tips">
+      <div class="tip"><strong>1.</strong> El host comparte el lobby en la TV o monitor.</div>
+      <div class="tip"><strong>2.</strong> Cada jugador entra con su nombre y el código mostrado.</div>
+      <div class="tip"><strong>3.</strong> Cuando haya un número par de jugadores, el host puede comenzar.</div>
+    </section>
+  </main>
 </body>
 </html>

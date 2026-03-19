@@ -1,43 +1,274 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Join - Mentes Gemelas</title>
+  <style>
+    :root {
+      --bg: #020617;
+      --panel: rgba(15, 23, 42, 0.88);
+      --border: rgba(148, 163, 184, 0.14);
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --primary: #8b5cf6;
+      --secondary: #22d3ee;
+      --good: #34d399;
+      --bad: #fb7185;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      font-family: Inter, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top, rgba(34, 211, 238, 0.22), transparent 28%),
+        radial-gradient(circle at bottom, rgba(139, 92, 246, 0.28), transparent 30%),
+        linear-gradient(180deg, #020617 0%, #111827 100%);
+    }
+
+    .shell {
+      width: min(560px, 100%);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      padding: 28px;
+      box-shadow: 0 28px 60px rgba(2, 6, 23, 0.42);
+      backdrop-filter: blur(16px);
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 8px 12px;
+      margin-bottom: 18px;
+      background: rgba(34, 211, 238, 0.14);
+      color: #a5f3fc;
+      font-size: 0.92rem;
+    }
+
+    .subtle {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .stack {
+      display: grid;
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    label {
+      display: grid;
+      gap: 8px;
+      font-weight: 600;
+    }
+
+    input {
+      width: 100%;
+      border-radius: 16px;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      background: rgba(15, 23, 42, 0.85);
+      color: var(--text);
+      padding: 14px 16px;
+      font-size: 1rem;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: rgba(139, 92, 246, 0.7);
+      box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.16);
+    }
+
+    button {
+      border: none;
+      border-radius: 16px;
+      padding: 14px 18px;
+      background: linear-gradient(135deg, var(--primary), #6366f1);
+      color: white;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.16s ease, opacity 0.16s ease;
+    }
+
+    button:hover { transform: translateY(-2px); }
+
+    .secondary {
+      background: rgba(34, 211, 238, 0.12);
+      border: 1px solid rgba(34, 211, 238, 0.24);
+      color: #a5f3fc;
+    }
+
+    .status {
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      display: none;
+      line-height: 1.5;
+    }
+
+    .status.ok {
+      display: block;
+      background: rgba(52, 211, 153, 0.14);
+      border: 1px solid rgba(52, 211, 153, 0.2);
+      color: #bbf7d0;
+    }
+
+    .status.error {
+      display: block;
+      background: rgba(251, 113, 133, 0.14);
+      border: 1px solid rgba(251, 113, 133, 0.2);
+      color: #fecdd3;
+    }
+
+    #game {
+      display: none;
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+
+    .question-card {
+      margin-bottom: 18px;
+      padding: 18px;
+      border-radius: 22px;
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid var(--border);
+    }
+
+    .button-row {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: 1fr 1fr;
+      margin-top: 14px;
+    }
+
+    @media (max-width: 560px) {
+      .shell { padding: 22px; }
+      .button-row { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
+  <main class="shell">
+    <div class="pill">📱 Join Lobby</div>
+    <h1>Unirse a Mentes Gemelas</h1>
+    <p class="subtle">
+      Escribe tu nombre y el código del lobby que aparece en la pantalla del host. Si entraste desde el QR, el código se completa automáticamente.
+    </p>
 
-  <h2>Ingresa tu nombre</h2>
-  <input id="name" />
-  <button onclick="join()">Unirse</button>
+    <section class="stack">
+      <label>
+        Código del lobby
+        <input id="lobbyCode" maxlength="6" autocomplete="one-time-code" placeholder="ABC123" />
+      </label>
 
-  <div id="game" style="display:none;">
-    <h3 id="question"></h3>
-    <input id="answer" />
-    <button onclick="send()">Enviar</button>
-    <button onclick="next()">Siguiente</button>
-  </div>
+      <label>
+        Nombre del jugador
+        <input id="name" maxlength="24" autocomplete="nickname" placeholder="Tu nombre" />
+      </label>
+
+      <button onclick="join()">Entrar al lobby</button>
+    </section>
+
+    <div id="status" class="status"></div>
+
+    <section id="game">
+      <div class="question-card">
+        <div class="subtle">Pregunta actual</div>
+        <h3 id="question">Esperando a que empiece la partida...</h3>
+      </div>
+
+      <label>
+        Tu respuesta
+        <input id="answer" placeholder="Escribe una respuesta" />
+      </label>
+
+      <div class="button-row">
+        <button onclick="send()">Enviar respuesta</button>
+        <button class="secondary" onclick="next()">Siguiente pregunta</button>
+      </div>
+    </section>
+  </main>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io()
+    const params = new URLSearchParams(window.location.search)
+    const lobbyCodeInput = document.getElementById("lobbyCode")
+    const nameInput = document.getElementById("name")
+    const answerInput = document.getElementById("answer")
+    const questionEl = document.getElementById("question")
+    const gameEl = document.getElementById("game")
+    const statusEl = document.getElementById("status")
+
+    if (params.get("code")) {
+      lobbyCodeInput.value = params.get("code").toUpperCase()
+    }
+
+    function setStatus(type, message) {
+      statusEl.className = `status ${type}`
+      statusEl.textContent = message
+    }
 
     function join() {
-      const name = document.getElementById("name").value
-      socket.emit("join_game", name)
-      document.getElementById("game").style.display = "block"
+      const name = nameInput.value.trim()
+      const lobbyCode = lobbyCodeInput.value.trim().toUpperCase()
+
+      socket.emit("join_game", { name, lobbyCode })
     }
 
     function send() {
-      const answer = document.getElementById("answer").value
+      const answer = answerInput.value.trim()
+      if (!answer) {
+        setStatus("error", "Escribe una respuesta antes de enviarla.")
+        return
+      }
+
       socket.emit("submit_answer", answer)
-      document.getElementById("answer").value = ""
+      answerInput.value = ""
+      setStatus("ok", "Respuesta enviada. Espera el resultado del host.")
     }
 
     function next() {
       socket.emit("next_question")
     }
 
-    socket.on("new_question", data => {
-      document.getElementById("question").innerText = data.question
+    socket.on("join_success", ({ name, lobbyCode }) => {
+      lobbyCodeInput.value = lobbyCode
+      gameEl.style.display = "block"
+      setStatus("ok", `${name}, ya estás dentro del lobby ${lobbyCode}. Espera la primera pregunta.`)
+    })
+
+    socket.on("join_error", (message) => {
+      gameEl.style.display = "none"
+      setStatus("error", message)
+    })
+
+    socket.on("new_question", (data) => {
+      questionEl.innerText = data.question
+      setStatus("ok", `Pregunta ${data.number} activa. ¡Responde rápido!`)
+    })
+
+    socket.on("answer_result", (data) => {
+      setStatus(data.match ? "ok" : "error", data.match
+        ? `¡Coincidieron! +${data.points} puntos para ${data.team.players.map((player) => player.name).join(" + ")}.`
+        : `No coincidieron esta vez. ${data.points} puntos para ${data.team.players.map((player) => player.name).join(" + ")}.`)
+    })
+
+    socket.on("game_over", () => {
+      setStatus("ok", "La partida terminó. Espera a que el host abra un nuevo lobby.")
     })
   </script>
 </body>
